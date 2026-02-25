@@ -13,6 +13,7 @@
 		386F74012F4DD30E0032B78B /* WHOGrowthData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 386F73F62F4DD30E0032B78B /* WHOGrowthData.swift */; };
 		386F74022F4DD30E0032B78B /* Child.swift in Sources */ = {isa = PBXBuildFile; fileRef = 386F73F72F4DD30E0032B78B /* Child.swift */; };
 		386F74032F4DD30E0032B78B /* DataStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 386F73F82F4DD30E0032B78B /* DataStore.swift */; };
+		AA0000020000000000000002 /* ThemeManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000001 /* ThemeManager.swift */; };
 		386F74042F4DD30E0032B78B /* PersondataTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = 386F73FB2F4DD30E0032B78B /* PersondataTab.swift */; };
 		386F74052F4DD30E0032B78B /* VaccinationerTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = 386F73FC2F4DD30E0032B78B /* VaccinationerTab.swift */; };
 		386F74062F4DD30E0032B78B /* UtvecklingTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = 386F73FD2F4DD30E0032B78B /* UtvecklingTab.swift */; };
@@ -29,6 +30,7 @@
 		386F73F62F4DD30E0032B78B /* WHOGrowthData.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = WHOGrowthData.swift; sourceTree = "<group>"; };
 		386F73F72F4DD30E0032B78B /* Child.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Child.swift; sourceTree = "<group>"; };
 		386F73F82F4DD30E0032B78B /* DataStore.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DataStore.swift; sourceTree = "<group>"; };
+		AA0000010000000000000001 /* ThemeManager.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ThemeManager.swift; sourceTree = "<group>"; };
 		386F73FB2F4DD30E0032B78B /* PersondataTab.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PersondataTab.swift; sourceTree = "<group>"; };
 		386F73FC2F4DD30E0032B78B /* VaccinationerTab.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = VaccinationerTab.swift; sourceTree = "<group>"; };
 		386F73FD2F4DD30E0032B78B /* UtvecklingTab.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = UtvecklingTab.swift; sourceTree = "<group>"; };
@@ -90,6 +92,7 @@
 				386F73F62F4DD30E0032B78B /* WHOGrowthData.swift */,
 				386F73F72F4DD30E0032B78B /* Child.swift */,
 				386F73F82F4DD30E0032B78B /* DataStore.swift */,
+				AA0000010000000000000001 /* ThemeManager.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -192,6 +195,7 @@
 				386F73E82F49C2300032B78B /* ChildCardKeeperApp.swift in Sources */,
 				386F74022F4DD30E0032B78B /* Child.swift in Sources */,
 				386F74032F4DD30E0032B78B /* DataStore.swift in Sources */,
+				AA0000020000000000000002 /* ThemeManager.swift in Sources */,
 				386F74012F4DD30E0032B78B /* WHOGrowthData.swift in Sources */,
 				386F74092F4DD30E0032B78B /* HealthCardView.swift in Sources */,
 				386F74082F4DD30E0032B78B /* ChildListView.swift in Sources */,
