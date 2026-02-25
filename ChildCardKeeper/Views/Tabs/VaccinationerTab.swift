@@ -24,14 +24,17 @@ struct VaccinationerTab: View {
                         VaccinationCard(
                             childIdx: idx,
                             vaccinationId: vaccination.id,
-                            isExpanded: expandedId == vaccination.id,
+                            isExpanded: expandedId == vaccination.id && pendingDeleteId == nil,
                             onTap: {
                                 withAnimation(.easeInOut(duration: 0.25)) {
                                     expandedId = expandedId == vaccination.id ? nil : vaccination.id
                                 }
                             },
                             onDelete: {
-                                pendingDeleteId = vaccination.id
+                                expandedId = nil
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                                    pendingDeleteId = vaccination.id
+                                }
                             }
                         )
                         .environmentObject(store)
