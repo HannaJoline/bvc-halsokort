@@ -44,7 +44,7 @@ struct TillvaxtTab: View {
                             .alert("Referenskurvor", isPresented: $showRefInfo) {
                                 Button("OK", role: .cancel) {}
                             } message: {
-                                Text("Referenskurvorna baseras på WHO Child Growth Standards (0–24 månader).\n\n🟠 Orange linje = 50:e percentilen (medianvärde)\n🔴 Röda streckade linjer = ±2 standardavvikelser (SD)\n\nKälla: World Health Organization, 2006\nwho.int/tools/child-growth-standards")
+                                Text("Referenskurvorna baseras på WHO Child Growth Standards (0–24 månader).\n\n🟠 Orange linje = 50:e percentilen (medianvärde)\n🔴 Röda streckade linjer = ±2 standardavvikelser (SD)\n\n⚠️ Kön måste anges under Persondata för att referenskurvorna ska visas.\n\nKälla: World Health Organization, 2006\nwho.int/tools/child-growth-standards")
                             }
                         }
                         GrowthChartView(
