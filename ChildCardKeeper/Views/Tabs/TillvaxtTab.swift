@@ -4,11 +4,13 @@ import Charts
 struct TillvaxtTab: View {
     let childId: UUID
     @EnvironmentObject var store: DataStore
+    @EnvironmentObject var themeManager: ThemeManager
     @State private var showChart = false
     @State private var selectedMetric: GrowthMetric = .weight
     @State private var showRefInfo = false
     
     private var childIndex: Int? { store.binding(for: childId) }
+    private var theme: AppTheme { themeManager.current }
     
     var body: some View {
         if let idx = childIndex {
@@ -16,6 +18,7 @@ struct TillvaxtTab: View {
             Form {
                 Section {
                     Toggle("Visa tillväxtkurva", isOn: $showChart)
+                        .tint(theme.primary)
                     if showChart {
                         Picker("Mätvärde", selection: $selectedMetric) {
                             ForEach(GrowthMetric.allCases) { m in
@@ -25,16 +28,18 @@ struct TillvaxtTab: View {
                         .pickerStyle(.segmented)
                     }
                 }
+                .listRowBackground(theme.cardBackground)
                 
                 if showChart {
                     Section {
                         HStack {
                             Text("Tillväxtkurva – \(selectedMetric.rawValue)")
                                 .font(.headline)
+                                .foregroundColor(theme.primary)
                             Spacer()
                             Button(action: { showRefInfo.toggle() }) {
                                 Image(systemName: "info.circle")
-                                    .foregroundColor(.blue)
+                                    .foregroundColor(theme.primary)
                             }
                             .alert("Referenskurvor", isPresented: $showRefInfo) {
                                 Button("OK", role: .cancel) {}
@@ -44,13 +49,15 @@ struct TillvaxtTab: View {
                         }
                         GrowthChartView(
                             child: child,
-                            metric: selectedMetric
+                            metric: selectedMetric,
+                            themeColor: theme.primary
                         )
                         .frame(height: 300)
                     }
+                    .listRowBackground(theme.cardBackground)
                 }
                 
-                Section("Mätningar") {
+                Section {
                     ForEach(store.children[idx].matningar.indices, id: \.self) { i in
                         MatningRow(matning: $store.children[idx].matningar[i])
                     }
@@ -64,9 +71,18 @@ struct TillvaxtTab: View {
                         store.save()
                     }) {
                         Label("Lägg till mätning", systemImage: "plus.circle")
+                            .foregroundColor(theme.primary)
                     }
+                } header: {
+                    Label("Mätningar", systemImage: "ruler.fill")
+                        .foregroundColor(theme.primary)
+                        .font(.headline)
                 }
+                .listRowBackground(theme.cardBackground)
             }
+            .scrollContentBackground(.hidden)
+            .background(theme.background.ignoresSafeArea())
+            .tint(theme.primary)
             .onChange(of: store.children[idx]) { _ in store.save() }
         }
     }
@@ -150,6 +166,7 @@ struct MatningRow: View {
 struct GrowthChartView: View {
     let child: Child
     let metric: GrowthMetric
+    var themeColor: Color = .blue
     
     private struct ChartPoint: Identifiable {
         let id = UUID()
@@ -187,7 +204,6 @@ struct GrowthChartView: View {
     private var childPoints: [ChartPoint] {
         var points: [ChartPoint] = []
         
-        // Add birth data at age 0 if available
         let hasManualZero = child.matningar.contains { m in
             ageInMonths(m) == 0 && valueFor(m) != nil
         }
@@ -232,7 +248,6 @@ struct GrowthChartView: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else {
             Chart {
-                // WHO reference lines
                 ForEach(who, id: \.series) { ref in
                     ForEach(ref.points) { p in
                         LineMark(
@@ -245,27 +260,26 @@ struct GrowthChartView: View {
                     }
                 }
                 
-                // Child data
                 ForEach(cp) { p in
                     LineMark(
                         x: .value("Ålder (mån)", p.ageMonths),
                         y: .value(metric.rawValue, p.value),
                         series: .value("Ref", "Barn")
                     )
-                    .foregroundStyle(.blue)
+                    .foregroundStyle(themeColor)
                     .lineStyle(StrokeStyle(lineWidth: 2))
                     
                     PointMark(
                         x: .value("Ålder (mån)", p.ageMonths),
                         y: .value(metric.rawValue, p.value)
                     )
-                    .foregroundStyle(.blue)
+                    .foregroundStyle(themeColor)
                     .symbolSize(30)
                 }
             }
             .chartXAxisLabel("Ålder (månader)")
             .chartForegroundStyleScale([
-                "Barn": .blue,
+                "Barn": themeColor,
                 "50:e percentilen": Color.orange.opacity(0.8),
                 "-2 SD": Color.red.opacity(0.5),
                 "+2 SD": Color.red.opacity(0.5)

@@ -52,10 +52,10 @@ struct VaccinationerTab: View {
                         Label("Lägg till vaccination", systemImage: "plus.circle.fill")
                             .font(.body)
                             .fontWeight(.medium)
-                            .foregroundColor(.accentColor)
+                            .foregroundColor(themeManager.current.primary)
                             .frame(maxWidth: .infinity)
                             .padding()
-                            .background(Color(.systemBackground))
+                            .background(themeManager.current.cardBackground)
                             .cornerRadius(12)
                             .shadow(color: .black.opacity(0.06), radius: 4, y: 2)
                     }
@@ -64,7 +64,7 @@ struct VaccinationerTab: View {
                 }
                 .padding(.top)
             }
-            .background(Color(.systemGroupedBackground))
+            .background(themeManager.current.background)
             .alert("Ta bort vaccination?", isPresented: Binding(
                 get: { pendingDeleteId != nil },
                 set: { if !$0 { pendingDeleteId = nil } }
@@ -95,6 +95,7 @@ struct VaccinationCard: View {
     let onDelete: () -> Void
     
     @EnvironmentObject var store: DataStore
+    @EnvironmentObject var themeManager: ThemeManager
     
     private var vaccinationIndex: Int? {
         store.children[childIdx].vaccinationer.firstIndex(where: { $0.id == vaccinationId })
@@ -106,7 +107,7 @@ struct VaccinationCard: View {
             
             VStack(spacing: 0) {
                 Button(action: onTap) {
-                    VaccinationCardHeader(vaccination: vaccination)
+                    VaccinationCardHeader(vaccination: vaccination, theme: themeManager.current)
                 }
                 .buttonStyle(.plain)
                 
@@ -115,12 +116,13 @@ struct VaccinationCard: View {
                     
                     VaccinationEditContent(
                         vaccination: $store.children[childIdx].vaccinationer[vi],
+                        theme: themeManager.current,
                         onDelete: onDelete,
                         onChanged: { store.save() }
                     )
                 }
             }
-            .background(Color(.systemBackground))
+            .background(themeManager.current.cardBackground)
             .cornerRadius(12)
             .shadow(color: .black.opacity(0.06), radius: 4, y: 2)
             .padding(.horizontal)
@@ -132,6 +134,7 @@ struct VaccinationCard: View {
 
 struct VaccinationCardHeader: View {
     let vaccination: Vaccination
+    var theme: AppTheme = .standard
     
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
@@ -141,6 +144,7 @@ struct VaccinationCardHeader: View {
                     Text("\(components.day ?? 0)")
                         .font(.title2)
                         .fontWeight(.bold)
+                        .foregroundColor(theme.primary)
                     Text(Self.shortMonthYear(from: datum))
                         .font(.caption)
                         .foregroundColor(.secondary)
@@ -204,6 +208,7 @@ struct VaccinationCardHeader: View {
 
 struct VaccinationEditContent: View {
     @Binding var vaccination: Vaccination
+    var theme: AppTheme = .standard
     var onDelete: () -> Void
     var onChanged: () -> Void
     
@@ -337,6 +342,7 @@ struct VaccinationEditContent: View {
                     }) {
                         Label("Lägg till eget vaccin", systemImage: "plus.circle")
                             .font(.caption)
+                            .foregroundColor(theme.primary)
                     }
                     .buttonStyle(.borderless)
                 }
