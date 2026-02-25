@@ -278,47 +278,12 @@ struct GrowthChartView: View {
                 }
             }
             .chartXAxisLabel("Ålder (månader)")
-            .chartLegend(.hidden)
-            
-            // Custom legend
-            HStack(spacing: 16) {
-                LegendItem(color: themeColor, label: "Barn", dashed: false)
-                LegendItem(color: .orange.opacity(0.8), label: "50:e perc.", dashed: false)
-                LegendItem(color: .red.opacity(0.5), label: "±2 SD", dashed: true)
-            }
-            .font(.caption2)
-            .padding(.top, 4)
+            .chartForegroundStyleScale([
+                "Barn": themeColor,
+                "50:e percentilen": Color.orange.opacity(0.8),
+                "-2 SD": Color.red.opacity(0.5),
+                "+2 SD": Color.red.opacity(0.5)
+            ])
         }
-    }
-}
-
-struct LegendItem: View {
-    let color: Color
-    let label: String
-    var dashed: Bool = false
-    
-    var body: some View {
-        HStack(spacing: 4) {
-            if dashed {
-                DashedLine()
-                    .stroke(color, style: StrokeStyle(lineWidth: 2, dash: [4, 3]))
-                    .frame(width: 20, height: 2)
-            } else {
-                Rectangle()
-                    .fill(color)
-                    .frame(width: 20, height: 2)
-            }
-            Text(label)
-                .foregroundColor(.secondary)
-        }
-    }
-}
-
-struct DashedLine: Shape {
-    func path(in rect: CGRect) -> Path {
-        var path = Path()
-        path.move(to: CGPoint(x: 0, y: rect.midY))
-        path.addLine(to: CGPoint(x: rect.maxX, y: rect.midY))
-        return path
     }
 }
