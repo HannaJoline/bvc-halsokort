@@ -4,12 +4,9 @@ struct VaccinationerTab: View {
     let childId: UUID
     @EnvironmentObject var store: DataStore
     @State private var expandedId: UUID? = nil
+    @State private var pendingDeleteId: UUID? = nil
     
     private var childIndex: Int? { store.binding(for: childId) }
-    
-    private func vaccinationIndex(for id: UUID, in idx: Int) -> Int? {
-        store.children[idx].vaccinationer.firstIndex(where: { $0.id == id })
-    }
     
     var body: some View {
         if let idx = childIndex {
@@ -21,44 +18,23 @@ struct VaccinationerTab: View {
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(.horizontal)
                     
-                    ForEach(store.children[idx].vaccinationer) { vaccination in
-                        let isExpanded = expandedId == vaccination.id
-                        
-                        VStack(spacing: 0) {
-                            // Compact card header
-                            Button(action: {
+                    let vaccinationer = store.children[idx].vaccinationer
+                    
+                    ForEach(vaccinationer) { vaccination in
+                        VaccinationCard(
+                            childIdx: idx,
+                            vaccinationId: vaccination.id,
+                            isExpanded: expandedId == vaccination.id,
+                            onTap: {
                                 withAnimation(.easeInOut(duration: 0.25)) {
-                                    expandedId = isExpanded ? nil : vaccination.id
+                                    expandedId = expandedId == vaccination.id ? nil : vaccination.id
                                 }
-                            }) {
-                                VaccinationCardHeader(vaccination: vaccination)
+                            },
+                            onDelete: {
+                                pendingDeleteId = vaccination.id
                             }
-                            .buttonStyle(.plain)
-                            
-                            // Expandable edit section
-                            if isExpanded, let vi = vaccinationIndex(for: vaccination.id, in: idx) {
-                                Divider()
-                                    .padding(.horizontal)
-                                VaccinationEditView(
-                                    vaccination: $store.children[idx].vaccinationer[vi],
-                                    onDelete: {
-                                        expandedId = nil
-                                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                                            if let removeIdx = store.children[idx].vaccinationer.firstIndex(where: { $0.id == vaccination.id }) {
-                                                store.children[idx].vaccinationer.remove(at: removeIdx)
-                                                store.save()
-                                            }
-                                        }
-                                    },
-                                    onSave: { store.save() }
-                                )
-                                .transition(.opacity.combined(with: .move(edge: .top)))
-                            }
-                        }
-                        .background(Color(.systemBackground))
-                        .cornerRadius(12)
-                        .shadow(color: .black.opacity(0.06), radius: 4, y: 2)
-                        .padding(.horizontal)
+                        )
+                        .environmentObject(store)
                     }
                     
                     Button(action: {
@@ -85,6 +61,65 @@ struct VaccinationerTab: View {
                 .padding(.top)
             }
             .background(Color(.systemGroupedBackground))
+            .alert("Ta bort vaccination?", isPresented: Binding(
+                get: { pendingDeleteId != nil },
+                set: { if !$0 { pendingDeleteId = nil } }
+            )) {
+                Button("Ta bort", role: .destructive) {
+                    if let deleteId = pendingDeleteId {
+                        expandedId = nil
+                        store.children[idx].vaccinationer.removeAll { $0.id == deleteId }
+                        store.save()
+                        pendingDeleteId = nil
+                    }
+                }
+                Button("Avbryt", role: .cancel) {
+                    pendingDeleteId = nil
+                }
+            }
+        }
+    }
+}
+
+// MARK: - Vaccination Card (self-contained)
+
+struct VaccinationCard: View {
+    let childIdx: Int
+    let vaccinationId: UUID
+    let isExpanded: Bool
+    let onTap: () -> Void
+    let onDelete: () -> Void
+    
+    @EnvironmentObject var store: DataStore
+    
+    private var vaccinationIndex: Int? {
+        store.children[childIdx].vaccinationer.firstIndex(where: { $0.id == vaccinationId })
+    }
+    
+    var body: some View {
+        if let vi = vaccinationIndex {
+            let vaccination = store.children[childIdx].vaccinationer[vi]
+            
+            VStack(spacing: 0) {
+                Button(action: onTap) {
+                    VaccinationCardHeader(vaccination: vaccination)
+                }
+                .buttonStyle(.plain)
+                
+                if isExpanded {
+                    Divider().padding(.horizontal)
+                    
+                    VaccinationEditContent(
+                        vaccination: $store.children[childIdx].vaccinationer[vi],
+                        onDelete: onDelete,
+                        onChanged: { store.save() }
+                    )
+                }
+            }
+            .background(Color(.systemBackground))
+            .cornerRadius(12)
+            .shadow(color: .black.opacity(0.06), radius: 4, y: 2)
+            .padding(.horizontal)
         }
     }
 }
@@ -94,23 +129,15 @@ struct VaccinationerTab: View {
 struct VaccinationCardHeader: View {
     let vaccination: Vaccination
     
-    private var dateFormatter: DateFormatter {
-        let f = DateFormatter()
-        f.dateFormat = "d MMM yyyy"
-        f.locale = Locale(identifier: "sv_SE")
-        return f
-    }
-    
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
-            // Date badge
             VStack(spacing: 2) {
                 if let datum = vaccination.datum {
                     let components = Calendar.current.dateComponents([.day, .month, .year], from: datum)
                     Text("\(components.day ?? 0)")
                         .font(.title2)
                         .fontWeight(.bold)
-                    Text(dateFormatter.shortMonthYear(from: datum))
+                    Text(Self.shortMonthYear(from: datum))
                         .font(.caption)
                         .foregroundColor(.secondary)
                 } else {
@@ -124,7 +151,6 @@ struct VaccinationCardHeader: View {
             }
             .frame(width: 56)
             
-            // Vaccine list
             VStack(alignment: .leading, spacing: 4) {
                 if !vaccination.vaccinVarunamn.isEmpty {
                     Text(vaccination.vaccinVarunamn)
@@ -148,7 +174,6 @@ struct VaccinationCardHeader: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             
-            // Lock indicator & chevron
             HStack(spacing: 8) {
                 if vaccination.locked {
                     Image(systemName: "lock.fill")
@@ -162,27 +187,39 @@ struct VaccinationCardHeader: View {
         }
         .padding()
     }
+    
+    static func shortMonthYear(from date: Date) -> String {
+        let f = DateFormatter()
+        f.dateFormat = "MMM yyyy"
+        f.locale = Locale(identifier: "sv_SE")
+        return f.string(from: date)
+    }
 }
 
-// MARK: - Edit View (expanded)
+// MARK: - Edit Content
 
-struct VaccinationEditView: View {
+struct VaccinationEditContent: View {
     @Binding var vaccination: Vaccination
     var onDelete: () -> Void
-    var onSave: () -> Void = {}
+    var onChanged: () -> Void
     
     private var datumBinding: Binding<Date> {
         Binding(
             get: { vaccination.datum ?? Date() },
-            set: { vaccination.datum = $0 }
+            set: { 
+                vaccination.datum = $0
+                onChanged()
+            }
         )
     }
     
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            // Lock toggle
             HStack {
-                Button(action: { vaccination.locked.toggle() }) {
+                Button(action: {
+                    vaccination.locked.toggle()
+                    onChanged()
+                }) {
                     Label(
                         vaccination.locked ? "Låst" : "Olåst",
                         systemImage: vaccination.locked ? "lock.fill" : "lock.open"
@@ -201,7 +238,6 @@ struct VaccinationEditView: View {
                 .buttonStyle(.borderless)
             }
             
-            // Date & vaccine name
             VStack(alignment: .leading, spacing: 8) {
                 Text("Datum")
                     .font(.caption)
@@ -217,34 +253,45 @@ struct VaccinationEditView: View {
                 TextField("Tillfälle", text: $vaccination.vaccinVarunamn)
                     .textFieldStyle(.roundedBorder)
                     .disabled(vaccination.locked)
+                    .onChange(of: vaccination.vaccinVarunamn) { _ in onChanged() }
             }
             
-            // Standard vaccines
             VStack(alignment: .leading, spacing: 4) {
                 Text("Standardvaccin")
                     .font(.caption)
                     .foregroundColor(.secondary)
                     .fontWeight(.semibold)
                 
+                let vaccineToggles: [(String, WritableKeyPath<Vaccination, Bool>)] = [
+                    ("Difteri", \.difteri),
+                    ("Stelkramp", \.stelkramp),
+                    ("Kikhosta", \.kikhosta),
+                    ("Polio", \.polio),
+                    ("Hemofilus Inf B", \.hemofilusInfB),
+                    ("Pneumokocker", \.pneumokocker),
+                    ("Mässling", \.massling),
+                    ("Röda hund", \.rodaHund),
+                    ("Påssjuka", \.passjuka),
+                    ("Tuberkulos", \.tuberkulos),
+                    ("Hepatit B", \.hepatitB),
+                    ("Rotavirus", \.rotavirus),
+                ]
+                
                 LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], alignment: .leading, spacing: 6) {
-                    Toggle("Difteri", isOn: $vaccination.difteri)
-                    Toggle("Stelkramp", isOn: $vaccination.stelkramp)
-                    Toggle("Kikhosta", isOn: $vaccination.kikhosta)
-                    Toggle("Polio", isOn: $vaccination.polio)
-                    Toggle("Hemofilus Inf B", isOn: $vaccination.hemofilusInfB)
-                    Toggle("Pneumokocker", isOn: $vaccination.pneumokocker)
-                    Toggle("Mässling", isOn: $vaccination.massling)
-                    Toggle("Röda hund", isOn: $vaccination.rodaHund)
-                    Toggle("Påssjuka", isOn: $vaccination.passjuka)
-                    Toggle("Tuberkulos", isOn: $vaccination.tuberkulos)
-                    Toggle("Hepatit B", isOn: $vaccination.hepatitB)
-                    Toggle("Rotavirus", isOn: $vaccination.rotavirus)
+                    ForEach(vaccineToggles, id: \.0) { name, keyPath in
+                        Toggle(name, isOn: Binding(
+                            get: { vaccination[keyPath: keyPath] },
+                            set: {
+                                vaccination[keyPath: keyPath] = $0
+                                onChanged()
+                            }
+                        ))
+                    }
                 }
                 .font(.caption)
                 .disabled(vaccination.locked)
             }
             
-            // Custom vaccines
             VStack(alignment: .leading, spacing: 4) {
                 Text("Egna vaccin")
                     .font(.caption)
@@ -254,14 +301,21 @@ struct VaccinationEditView: View {
                 ForEach(vaccination.egnaVaccin) { eget in
                     if let ei = vaccination.egnaVaccin.firstIndex(where: { $0.id == eget.id }) {
                         HStack {
-                            TextField("Vaccinnamn", text: $vaccination.egnaVaccin[ei].namn)
-                                .textFieldStyle(.roundedBorder)
-                                .font(.subheadline)
-                                .disabled(vaccination.locked)
+                            TextField("Vaccinnamn", text: Binding(
+                                get: { vaccination.egnaVaccin[ei].namn },
+                                set: {
+                                    vaccination.egnaVaccin[ei].namn = $0
+                                    onChanged()
+                                }
+                            ))
+                            .textFieldStyle(.roundedBorder)
+                            .font(.subheadline)
+                            .disabled(vaccination.locked)
                             
                             if !vaccination.locked {
                                 Button(action: {
                                     vaccination.egnaVaccin.removeAll { $0.id == eget.id }
+                                    onChanged()
                                 }) {
                                     Image(systemName: "minus.circle.fill")
                                         .foregroundColor(.red)
@@ -275,6 +329,7 @@ struct VaccinationEditView: View {
                 if !vaccination.locked {
                     Button(action: {
                         vaccination.egnaVaccin.append(EgetVaccin())
+                        onChanged()
                     }) {
                         Label("Lägg till eget vaccin", systemImage: "plus.circle")
                             .font(.caption)
@@ -285,17 +340,5 @@ struct VaccinationEditView: View {
         }
         .padding()
         .opacity(vaccination.locked ? 0.7 : 1.0)
-        .onChange(of: vaccination) { _ in onSave() }
-    }
-}
-
-// MARK: - Helper
-
-extension DateFormatter {
-    func shortMonthYear(from date: Date) -> String {
-        let f = DateFormatter()
-        f.dateFormat = "MMM yyyy"
-        f.locale = Locale(identifier: "sv_SE")
-        return f.string(from: date)
     }
 }
