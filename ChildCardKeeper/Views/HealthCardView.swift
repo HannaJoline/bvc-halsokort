@@ -3,6 +3,7 @@ import SwiftUI
 struct HealthCardView: View {
     let childId: UUID
     @EnvironmentObject var store: DataStore
+    @EnvironmentObject var themeManager: ThemeManager
     
     private var child: Child {
         store.children.first(where: { $0.id == childId }) ?? Child()
@@ -36,5 +37,6 @@ struct HealthCardView: View {
         }
         .navigationTitle(child.displayName)
         .navigationBarTitleDisplayMode(.inline)
+        .tint(themeManager.current.primary)
     }
 }

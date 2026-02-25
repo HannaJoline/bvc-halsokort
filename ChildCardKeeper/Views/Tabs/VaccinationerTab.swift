@@ -3,6 +3,7 @@ import SwiftUI
 struct VaccinationerTab: View {
     let childId: UUID
     @EnvironmentObject var store: DataStore
+    @EnvironmentObject var themeManager: ThemeManager
     @State private var expandedId: UUID? = nil
     @State private var pendingDeleteId: UUID? = nil
     
