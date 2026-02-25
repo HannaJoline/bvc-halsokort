@@ -1,0 +1,14 @@
+# Xcode user data
+xcuserdata/
+*.xcuserstate
+*.xcuserdatad/
+
+# Build
+build/
+DerivedData/
+
+# macOS
+.DS_Store
+
+# Ruby
+generate_project.rb
